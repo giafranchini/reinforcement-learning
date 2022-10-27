@@ -37,29 +37,26 @@ def mc_prediction(policy, env, num_episodes, discount_factor=1.0):
     # The final value function
     V = defaultdict(float)
 
-    for hand in range(num_episodes):
-        observation = env.reset()
-        s = observation
-        returns_count[s] += 1
+    for hand in range(1, num_episodes+1):
+        state = env.reset()
+        episode = []
         for t in range(100):
-            action = sample_policy(observation)
+            action = sample_policy(state)
             observation, reward, done, _ = env.step(action)
-            returns_sum[s] += reward
-            V[s] = 0
+            episode.append((state, action, reward))
             if done:
                 break
+            state = observation
 
-    for key in returns_count:
-        V[key] = returns_sum[key] / returns_count[key]
-        print(V[key])
+        states_in_episode = [tuple(x[0]) for x in episode]
+        for state in states_in_episode:
+            first_occurence = states_in_episode.index(state)
+            returns_count[state] += 1
+            G = sum([x[2]*discount_factor**i for i,x in enumerate(episode[first_occurence:])])
+            returns_sum[state] += G
+            V[state] = returns_sum[state] / returns_count[state]
 
     return V
-
-
-def print_observation(observation):
-    score, dealer_score, usable_ace = observation
-    print("Player Score: {} (Usable Ace: {}), Dealer Score: {}".format(
-          score, usable_ace, dealer_score))
 
 
 def sample_policy(observation):
@@ -74,5 +71,5 @@ if __name__ == "__main__":
     V_10k = mc_prediction(sample_policy, env, num_episodes=10000)
     plotting.plot_value_function(V_10k, title="10,000 Steps")
 
-    #V_500k = mc_prediction(sample_policy, env, num_episodes=500000)
-    #plotting.plot_value_function(V_500k, title="500,000 Steps")
+    V_500k = mc_prediction(sample_policy, env, num_episodes=500000)
+    plotting.plot_value_function(V_500k, title="500,000 Steps")
