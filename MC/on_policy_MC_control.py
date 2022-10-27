@@ -71,9 +71,9 @@ def make_epsilon_greedy_policy(Q, epsilon, nA):
 
     def policy_fn(observation):
         greedy_a = np.argmax(Q[observation])
-        return greedy_prob(greedy_a, epsilon)
+        return epsilon_greedy_prob(greedy_a, epsilon)
 
-    def greedy_prob(greedy_a, epsilon):
+    def epsilon_greedy_prob(greedy_a, epsilon):
         vals = {0: np.array([1 - epsilon / 2, epsilon / 2]),
                 1: np.array([epsilon / 2, 1 - epsilon / 2])
                 }
