@@ -30,7 +30,7 @@ def mc_control_epsilon_greedy(env, num_episodes, discount_factor=1.0, epsilon=0.
         policy is a function that takes an observation as an argument and returns
         action probabilities
     """
-    counter = 0
+    k = 0
 
     # Keeps track of sum and count of returns for each state
     # to calculate an average. We could use an array to save all
@@ -44,8 +44,8 @@ def mc_control_epsilon_greedy(env, num_episodes, discount_factor=1.0, epsilon=0.
 
     for ep in range(num_episodes):
         # acting epsilon-greedy at every step means improving the policy
-        counter += 1
-        epsilon = 1 / counter
+        k += 1
+        epsilon = 1 / k
         policy = make_epsilon_greedy_policy(Q, epsilon, env.nA)
         # MC policy evaluation
         Q = mc_prediction(Q, policy, env, returns_sum, returns_count)
@@ -98,24 +98,31 @@ def mc_prediction(Q, policy, env, returns_sum, returns_count, num_episodes=1, di
         The state is a tuple and the value is a float.
     """
 
-    observation = env.reset()
-    s = observation
+    episode = []
+    state = env.reset()
 
     for t in range(100):
-        actions_prob = 100 * policy(observation)
-        a = random.choices(range(env.nA), list(actions_prob))[0]
-        returns_count[(s, a)] += 1
-        observation, reward, done, _ = env.step(a)
-        returns_sum[(s, a)] += reward
-        Q[s][a] = returns_sum[s, a] / returns_count[s, a]
+        action_prob = 100 * policy(state)
+        action = random.choices(range(env.nA), list(action_prob))[0]
+        observation, reward, done, _ = env.step(action)
+        episode.append((state, action, reward))
         if done:
             break
+        state = observation
+
+    states_actions_in_episode = [(x[0], x[1]) for x in episode]
+    for state, action in states_actions_in_episode:
+        first_occurence = states_actions_in_episode.index((state, action))
+        returns_count[(state, action)] += 1
+        G = sum([x[2] * discount_factor ** i for i, x in enumerate(episode[first_occurence:])])
+        returns_sum[state, action] += G
+        Q[state][action] = returns_sum[state, action] / returns_count[state, action]
 
     return Q
 
 
 if __name__ == "__main__":
-    Q, policy = mc_control_epsilon_greedy(env, num_episodes=500000, epsilon=1)
+    Q, policy = mc_control_epsilon_greedy(env, num_episodes=100000, epsilon=1)
     V = defaultdict(float)
     for state, actions in Q.items():
         action_value = np.max(actions)
