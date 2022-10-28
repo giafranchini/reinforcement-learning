@@ -112,9 +112,9 @@ def mc_prediction(Q, policy, env, returns_sum, returns_count, num_episodes=1, di
 
     states_actions_in_episode = [(x[0], x[1]) for x in episode]
     for state, action in states_actions_in_episode:
-        first_occurence = states_actions_in_episode.index((state, action))
+        first_occurrence = states_actions_in_episode.index((state, action))
         returns_count[(state, action)] += 1
-        G = sum([x[2] * discount_factor ** i for i, x in enumerate(episode[first_occurence:])])
+        G = sum([x[2] * discount_factor ** i for i, x in enumerate(episode[first_occurrence:])])
         returns_sum[state, action] += G
         Q[state][action] = returns_sum[state, action] / returns_count[state, action]
 
